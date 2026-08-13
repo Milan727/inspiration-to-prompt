@@ -1,0 +1,15 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+*.zip
+
+# IDE & OS files
+.DS_Store
+*.log
+*.timestamp*.mjs
+.vscode
+.idea
+

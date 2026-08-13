@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "PromptForge - AI Photoshoot & Prompt Builder",
+  "version": "1.0.0",
+  "description": "Transform Pinterest & web inspiration images into detailed AI prompts and inject them into ChatGPT/Gemini with zero API cost.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "scripting",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "*://*.pinterest.com/*",
+    "*://*.pinterest.ca/*",
+    "*://*.pinterest.co.uk/*",
+    "*://chatgpt.com/*",
+    "*://*.chatgpt.com/*",
+    "*://gemini.google.com/*",
+    "*://*.gemini.google.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background/serviceWorker.ts",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open PromptForge Side Panel"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/pinterestDetector.ts"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://*.chatgpt.com/*",
+        "*://gemini.google.com/*",
+        "*://*.gemini.google.com/*"
+      ],
+      "js": ["src/content/llmInjector.ts"],
+      "run_at": "document_end"
+    }
+  ]
+}
