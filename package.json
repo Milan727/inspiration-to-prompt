@@ -1,0 +1,35 @@
+{
+  "name": "promptforge",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Zero-cost AI photoshoot prompt builder & LLM composer injector Chrome extension",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "zip": "npm run build && zip -r promptforge-v1.0.0.zip dist icons manifest.json -x '*.DS_Store'",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "lucide-react": "^0.469.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@types/chrome": "^0.0.299",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
