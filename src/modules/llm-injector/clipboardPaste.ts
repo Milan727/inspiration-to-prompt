@@ -1,30 +1,20 @@
+import { LOG_PREFIX } from '../../brand';
 /**
- * Helper to fetch image URL or Base64 and convert it to a File object.
- * Uses background script message if fetching a remote cross-origin URL to bypass CORS.
+ * Converts an image URL or data URL to a File. Remote URLs are downloaded by the service worker,
+ * which has host permission for the image's site; a fetch from the ChatGPT / Gemini page itself
+ * would be blocked by CORS, so there is no in-page fallback.
  */
 export async function urlToFile(urlOrDataUrl: string, filename: string): Promise<File> {
   let dataUrl = urlOrDataUrl;
 
   if (urlOrDataUrl.startsWith('http://') || urlOrDataUrl.startsWith('https://')) {
-    try {
-      const response = await new Promise<{ success: boolean; dataUrl?: string }>((resolve) => {
-        chrome.runtime.sendMessage(
-          { type: 'FETCH_IMAGE_BASE64', payload: { url: urlOrDataUrl } },
-          (res) => resolve(res || { success: false })
-        );
-      });
-      if (response.success && response.dataUrl) {
-        dataUrl = response.dataUrl;
-      } else {
-        const res = await fetch(urlOrDataUrl);
-        const blob = await res.blob();
-        return new File([blob], filename, { type: blob.type || 'image/jpeg' });
-      }
-    } catch (e) {
-      const res = await fetch(urlOrDataUrl);
-      const blob = await res.blob();
-      return new File([blob], filename, { type: blob.type || 'image/jpeg' });
-    }
+    const response = await new Promise<{ success: boolean; dataUrl?: string; error?: string }>((resolve) => {
+      chrome.runtime.sendMessage({ type: 'FETCH_IMAGE_BASE64', payload: { url: urlOrDataUrl } }, (res) =>
+        resolve(chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : res ?? { success: false }),
+      );
+    });
+    if (!response.success || !response.dataUrl) throw new Error(response.error || 'Image download failed');
+    dataUrl = response.dataUrl;
   }
 
   // Convert base64 dataUrl to File
@@ -41,47 +31,66 @@ export async function urlToFile(urlOrDataUrl: string, filename: string): Promise
   return new File([blob], filename, { type: mime });
 }
 
+function waitFor(condition: () => boolean, timeoutMs: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const tick = () => {
+      if (condition()) return resolve(true);
+      if (Date.now() - started >= timeoutMs) return resolve(false);
+      setTimeout(tick, 150);
+    };
+    tick();
+  });
+}
+
 /**
- * Attaches files to composer via file input assignment AND synthetic paste
+ * Attaches files to the composer and verifies it worked by waiting for preview thumbnails to appear.
+ * Tries the page's file input first; only if no previews show up does it try a synthetic paste, so a
+ * working upload is never duplicated.
  */
-export function attachFilesToComposer(targetElement: HTMLElement, fileInput: HTMLInputElement | null, files: File[]): boolean {
+export async function attachFilesToComposer(
+  targetElement: HTMLElement,
+  fileInput: HTMLInputElement | null,
+  files: File[],
+  timeoutMs = 2500,
+): Promise<boolean> {
   if (!files || files.length === 0) return false;
 
-  let attached = false;
+  const scope = targetElement.closest('form') ?? targetElement.parentElement?.parentElement ?? document.body;
+  const previewCount = () => scope.querySelectorAll('img').length;
+  const before = previewCount();
+  const appeared = () => waitFor(() => previewCount() > before, timeoutMs);
+
   const dataTransfer = new DataTransfer();
   files.forEach((file) => dataTransfer.items.add(file));
 
-  // Find all file inputs on page as backup
-  const allFileInputs = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
-  const targetInputs = fileInput ? [fileInput, ...allFileInputs] : allFileInputs;
+  const input =
+    fileInput instanceof HTMLInputElement && fileInput.type === 'file'
+      ? fileInput
+      : document.querySelector<HTMLInputElement>('input[type="file"][accept*="image"]') ??
+        document.querySelector<HTMLInputElement>('input[type="file"]');
 
-  for (const input of targetInputs) {
+  if (input) {
     try {
       input.files = dataTransfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      attached = true;
+      if (await appeared()) return true;
+      console.warn(`${LOG_PREFIX} No previews after using the file input, trying paste instead.`);
     } catch (e) {
-      console.warn('[PromptForge] File input assignment error:', e);
+      console.warn(`${LOG_PREFIX} File input assignment failed, trying paste instead:`, e);
     }
   }
 
-  // Strategy B: Clipboard paste simulation on composer text field
   try {
     targetElement.focus();
-    const pasteEvent = new ClipboardEvent('paste', {
-      bubbles: true,
-      cancelable: true,
-      clipboardData: dataTransfer,
-    });
-
-    targetElement.dispatchEvent(pasteEvent);
-    attached = true;
+    targetElement.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dataTransfer }));
+    if (await appeared()) return true;
+    console.warn(`${LOG_PREFIX} No previews after paste either; the page did not accept the images.`);
+    return false;
   } catch (error) {
-    console.warn('[PromptForge] Clipboard paste simulation error:', error);
+    console.warn(`${LOG_PREFIX} Clipboard paste simulation error:`, error);
+    return false;
   }
-
-  return attached;
 }
 
 /**

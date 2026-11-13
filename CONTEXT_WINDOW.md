@@ -8,7 +8,7 @@
 
 ## 📌 Project Executive Summary
 
-* **Project Name**: PromptForge
+* **Project Name**: Lookshot (renamed from PromptForge on 2026-10-23)
 * **Version**: `v1.0.0`
 * **Type**: Manifest V3 Chrome Extension
 * **Target Users**: Creators, Photographers, AI Artists, Influencers, and Normal Pinterest/Instagram Users.
@@ -302,17 +302,147 @@
 
 ---
 
+### Iteration 19 — CLAUDE.md, iCloud Hang Fix & Clean Zip Packaging (2026-10-23)
+- **Goal / Trigger**: User ran Claude Code `/init` to create a `CLAUDE.md`; verification then exposed a hanging test runner and a bloated release zip.
+- **Changes Made**:
+  - Created [`CLAUDE.md`](file:///Users/milan/Desktop/Ext/CLAUDE.md): session protocol, commands (incl. single-test runs), cross-file architecture (message flow, two-layer injection with duplicated selectors in `serviceWorker.ts`, Midjourney/Flux overrides in `builder.ts`), styling source of truth.
+  - Diagnosed `npm test` hanging silently: iCloud "Optimize Mac Storage" had evicted 11,714 files in `node_modules` plus project and `.git` files (dataless). Restored project/`.git` files via `brctl download` and reinstalled dependencies with `rm -rf node_modules && npm ci`.
+  - Fixed `zip` script in [`package.json`](file:///Users/milan/Desktop/Ext/package.json): it now deletes the previous zip first. `zip -r` was updating the old archive in place, so 14 stale hashed bundles from July builds were shipped (614 KB → 87 KB).
+  - Updated the stale UI design rule in [`AGENTS.md`](file:///Users/milan/Desktop/Ext/AGENTS.md) from "Exaggerated Minimalism" to the current Neo-Editorial Brutalist theme in `index.css`.
+- **Files Modified**: [`CLAUDE.md`](file:///Users/milan/Desktop/Ext/CLAUDE.md), [`package.json`](file:///Users/milan/Desktop/Ext/package.json), [`AGENTS.md`](file:///Users/milan/Desktop/Ext/AGENTS.md), [`CONTEXT_WINDOW.md`](file:///Users/milan/Desktop/Ext/CONTEXT_WINDOW.md).
+- **Verification Status**:
+  - Vitest Unit Tests: **7/7 Passed**
+  - Production Bundle: `npm run zip` built cleanly; `promptforge-v1.0.0.zip` now contains only the 7 current `dist/assets` files.
+
+---
 
 
 
+
+
+### Iteration 20 — Store Blockers: Generic Prompts, Minimal Permissions, Face Consent (2026-10-23)
+- **Goal / Trigger**: Step 1 of the agreed launch plan (free v1.0 → Pro v1.1, darkroom-minimal redesign for casual creators): fix issues that would hurt Chrome Web Store review or first users.
+- **Changes Made**:
+  - Rewrote all 6 rule packs in [`rulePacks.ts`](file:///Users/milan/Desktop/Ext/src/modules/prompt-builder/rulePacks.ts) on a shared `composePrompt()`: removed details hard-coded from one specific photo (stars, safety pins, split-screen, harness, graffiti), always include the chosen aspect ratio and lens, auto-number the checklist (no gaps), replace the "SAFETY & COMPLIANCE NOTICE" with a plain identity rule (never reproduce anyone from Image 1; Image 2 is the user's own photo shared with consent). Added `styleKeywords` per pack.
+  - [`builder.ts`](file:///Users/milan/Desktop/Ext/src/modules/prompt-builder/builder.ts): Midjourney prompt now leads with the image URL as an image prompt, drops the outdated `--v 6.0` / `--quality` flags and the `/imagine prompt:` prefix; Flux prompt simplified; both use the pack's style keywords.
+  - [`manifest.json`](file:///Users/milan/Desktop/Ext/manifest.json): removed `tabs` and `<all_urls>`; added `activeTab`, `*.pinimg.com`, more Pinterest country domains, and per-site `optional_host_permissions`. Hover detector now runs on Pinterest only.
+  - New [`imageAccess.ts`](file:///Users/milan/Desktop/Ext/src/lib/imageAccess.ts) (requests access to only the image's site at send time) and [`imageResize.ts`](file:///Users/milan/Desktop/Ext/src/lib/imageResize.ts) (reference photo downscaled to 1024 px JPEG).
+  - [`App.tsx`](file:///Users/milan/Desktop/Ext/src/sidepanel/App.tsx): removed the bring-your-own Gemini key panel and "Extract visual features" button (deleted `src/lib/geminiApi.ts`, clears any stored key); added a "this is a photo of me" consent checkbox gating the reference-photo upload.
+  - Docs: removed "bypassing public figure blocks" and outdated claims from [`README.md`](file:///Users/milan/Desktop/Ext/README.md); updated permission table, privacy copy and data disclosures in [`CHROMEWEBSTORE.md`](file:///Users/milan/Desktop/Ext/CHROMEWEBSTORE.md); updated [`CLAUDE.md`](file:///Users/milan/Desktop/Ext/CLAUDE.md) and the test count rule in [`AGENTS.md`](file:///Users/milan/Desktop/Ext/AGENTS.md).
+  - Tests: updated [`promptBuilder.test.ts`](file:///Users/milan/Desktop/Ext/tests/unit/promptBuilder.test.ts) and added guards (no photo-specific phrases or "bypass" in any intent/target, aspect ratio present, contiguous numbering, Flux, directed edit); new [`imageHelpers.test.ts`](file:///Users/milan/Desktop/Ext/tests/unit/imageHelpers.test.ts).
+  - Deferred to the redesign step: bundling fonts locally (new font choice comes with the darkroom theme).
+- **Files Modified**: `src/modules/prompt-builder/rulePacks.ts`, `src/modules/prompt-builder/builder.ts`, `src/sidepanel/App.tsx`, `src/lib/imageAccess.ts` (new), `src/lib/imageResize.ts` (new), `src/lib/geminiApi.ts` (deleted), `manifest.json`, `tests/unit/promptBuilder.test.ts`, `tests/unit/imageHelpers.test.ts` (new), `README.md`, `CHROMEWEBSTORE.md`, `CLAUDE.md`, `AGENTS.md`, `CONTEXT_WINDOW.md`.
+- **Verification Status**:
+  - Vitest Unit Tests: **15/15 Passed**; `tsc --noEmit` clean.
+  - Production Bundle: `npm run zip` built cleanly (86 KB). Packaged manifest checked: 5 permissions, no `tabs` / `<all_urls>`.
+  - Not yet tested by loading the unpacked extension in Chrome.
+
+---
+
+### Iteration 21 — Remote Selector Config, Real Icons & Darkroom Mockup (2026-10-23)
+- **Goal / Trigger**: User approved the recommended additions and decided to ship free first (no monetization for now); asked for a take on renaming. Also reported a blank side panel while testing.
+- **Changes Made**:
+  - Blank panel: caused by loading the repo root instead of `dist/` in Chrome (root manifest points at `.ts` sources). Documented in [`CLAUDE.md`](file:///Users/milan/Desktop/Ext/CLAUDE.md).
+  - Icons: the committed icons were 1×1 px placeholders. Rewrote [`generate-icons.js`](file:///Users/milan/Desktop/Ext/scripts/generate-icons.js) to render real 16/48/128 px PNGs (dark tile + white lens ring) with no dependencies; regenerated `icons/` and `public/icons/`.
+  - Remote selectors: new [`config/selectors.json`](file:///Users/milan/Desktop/Ext/config/selectors.json) is bundled as the default and fetched from GitHub `main` by the service worker at most every 6h; validated by `parseSelectorConfig()` and cached in `chrome.storage.local.remoteSelectors` ([`composerSelectors.ts`](file:///Users/milan/Desktop/Ext/src/modules/llm-injector/composerSelectors.ts)). Removed the duplicated inline selector list from [`serviceWorker.ts`](file:///Users/milan/Desktop/Ext/src/background/serviceWorker.ts) (selectors now passed as args) and switched [`llmInjector.ts`](file:///Users/milan/Desktop/Ext/src/content/llmInjector.ts) to the shared config. Dropped unused send-button selectors (the extension never auto-sends).
+  - Disclosed the selector fetch in [`CHROMEWEBSTORE.md`](file:///Users/milan/Desktop/Ext/CHROMEWEBSTORE.md).
+  - Design: published a darkroom-minimal mockup (first open, image captured with 3 styles + sticky send, sent + before/after gallery, one-tap menu on a pin) at https://claude.ai/artifact/Cs777SnS5fUmYdC1y5LJ2i using the working name "Lookshot" (not yet confirmed).
+- **Files Modified**: `config/selectors.json` (new), `src/modules/llm-injector/composerSelectors.ts`, `src/background/serviceWorker.ts`, `src/content/llmInjector.ts`, `tests/unit/composerSelectors.test.ts` (new), `scripts/generate-icons.js`, `icons/*.png`, `public/icons/*.png`, `CHROMEWEBSTORE.md`, `CLAUDE.md`, `CONTEXT_WINDOW.md`.
+- **Verification Status**:
+  - Vitest Unit Tests: **20/20 Passed**; `tsc --noEmit` clean.
+  - Production Bundle: `npm run zip` built cleanly (92 KB).
+  - Remote selector file only resolves once `config/selectors.json` is pushed to `main`; until then the bundled copy is used.
+
+---
+
+### Iteration 22 — Rename to Lookshot, Darkroom Side Panel, One-Tap Pinterest Menu (2026-10-23)
+- **Goal / Trigger**: User picked the name "Lookshot" (checked: no Chrome extension or website with that name) and asked to go ahead with the recommended work; monetization deferred — build and ship free first.
+- **Changes Made**:
+  - **Rename**: manifest name `Lookshot - Put Yourself in Any Photo`, package `lookshot`, zip `lookshot-v1.0.0.zip`, context menu, panel title, logs. Product name centralised in new [`src/brand.ts`](file:///Users/milan/Desktop/Ext/src/brand.ts).
+  - **Release zip bug fixed**: the old `zip` script put the repo-root `manifest.json` (pointing at `.ts` sources) at the top of the archive, so a store upload would have been broken. It now zips the contents of `dist/`.
+  - **Side panel rebuilt** in the darkroom-minimal design: `App.tsx` (1,056 lines) replaced by a small app + [`usePanelState.ts`](file:///Users/milan/Desktop/Ext/src/sidepanel/usePanelState.ts) (storage-backed, live via `storage.onChanged`) + components (Header, Welcome, ImageHero, StylePicker, YourPhoto, AdvancedSettings, SendBar, Gallery). Tailwind `ink-*` / `safelight` tokens, Inter bundled via `@fontsource-variable/inter` (no Google Fonts request). Light theme and dark-mode toggle removed.
+  - **Simplified styles**: 3 main styles (Put me in this photo, Recreate this look, Try this outfit) + "More styles"; `MAIN_INTENTS` / `MORE_INTENTS` and `needsSelfie` added to rule packs. Settings persisted (`photoSettings`); aspect ratio auto-matches the captured photo (new [`aspectRatio.ts`](file:///Users/milan/Desktop/Ext/src/lib/aspectRatio.ts), fixing the old detector that could never return 9:16).
+  - **One-tap Pinterest menu**: [`pinterestDetector.ts`](file:///Users/milan/Desktop/Ext/src/content/pinterestDetector.ts) rewritten — shadow-DOM ring + style menu, image found via `elementsFromPoint`, sends directly or opens the panel when a selfie is needed.
+  - **Service worker**: new `SEND_TO_AI` flow (history, find/open/focus tab, wait for load, retrying injection); context menu opens the panel inside the user gesture. `FETCH_IMAGE_BASE64` used `FileReader`, which does not exist in service workers, so image attachment likely always failed — replaced with [`blobToDataUrl`](file:///Users/milan/Desktop/Ext/src/lib/dataUrl.ts).
+  - **Double upload fixed**: `attachFilesToComposer` set files on every file input on the page *and* simulated a paste; it now attaches once.
+  - **Policy cleanup**: removed `sanitizePublicFiguresAndSafetyKeywords` (rewrote celebrity names and "deepfake"/"face swap" to evade AI safety filters); kept only Pinterest caption-prefix cleanup.
+  - Shared modules: [`storage.ts`](file:///Users/milan/Desktop/Ext/src/lib/storage.ts) (keys, defaults, history), [`targets.ts`](file:///Users/milan/Desktop/Ext/src/lib/targets.ts).
+  - Docs: README rewritten; CHROMEWEBSTORE.md, PROJECT.md, AGENTS.md (design standard → Darkroom Minimal), CLAUDE.md updated.
+- **Files Modified**: `manifest.json`, `package.json`, `package-lock.json`, `tailwind.config.js`, `src/brand.ts` (new), `src/types/index.ts`, `src/background/serviceWorker.ts`, `src/content/pinterestDetector.ts`, `src/content/llmInjector.ts`, `src/modules/llm-injector/clipboardPaste.ts`, `src/modules/llm-injector/composerSelectors.ts`, `src/modules/image-selection/pinterestEnhancer.ts`, `src/modules/prompt-builder/rulePacks.ts`, `src/lib/{aspectRatio,dataUrl,storage,targets}.ts` (new), `src/sidepanel/{App.tsx,usePanelState.ts,index.css,index.html}`, `src/sidepanel/components/*` (new), `tests/unit/{sharedLib,dataUrl,sidepanel}.test.*` (new), `tests/unit/pinterestEnhancer.test.ts`, `README.md`, `CHROMEWEBSTORE.md`, `PROJECT.md`, `AGENTS.md`, `CLAUDE.md`, `CONTEXT_WINDOW.md`.
+- **Verification Status**:
+  - Vitest Unit Tests: **30/30 Passed** (incl. a render test of the side panel); `tsc --noEmit` clean.
+  - Production Bundle: `npm run zip` built cleanly; `lookshot-v1.0.0.zip` (314 KB) has `manifest.json` at the top level pointing at the compiled service worker.
+  - Not yet tested in a real Chrome window (Pinterest menu, sending to ChatGPT/Gemini, image attachment).
+
+---
+
+### Iteration 23 — Likeness & Fidelity Fixes for "Put me in this photo" (2026-10-23)
+- **Goal / Trigger**: First real test (inspiration with poem text + stars, selfie wearing sunglasses). ChatGPT copied the selfie's sunglasses and smile, dropped the text and stars; Gemini kept the layout but results were inconsistent. User: the expression should come from the inspiration photo.
+- **Changes Made**:
+  - [`rulePacks.ts`](file:///Users/milan/Desktop/Ext/src/modules/prompt-builder/rulePacks.ts): every prompt now has a `lead` line. "Put me in this photo" is framed as an **edit of Image 1** (replace only the person, keep everything else). New identity rule: take ONLY facial identity from Image 2 and never its glasses/sunglasses, jewellery, clothing, background, lighting, expression or head angle. New shared rule: expression and pose come from Image 1 (used by place/recreate). Text rule rewritten so "keep" covers stickers and graphic overlays; "no text" now removes only words. Fixed the `Camera:85mm` missing space.
+  - Attachments named `1-inspiration.jpg` / `2-my-face.jpg` ([`attachments.ts`](file:///Users/milan/Desktop/Ext/src/modules/prompt-builder/attachments.ts)) and referenced by name in the prompt, so the model can't swap them.
+  - Default text setting changed from "no text" to "keep text" ([`storage.ts`](file:///Users/milan/Desktop/Ext/src/lib/storage.ts)). Existing saved settings keep their old value.
+  - "Your photo" now shows a tip: face the camera, good light, eyes visible (no sunglasses).
+  - Tests: 5 new prompt tests covering the edit framing, identity-only rule, expression from Image 1, text kept by default and named attachments.
+- **Files Modified**: `src/modules/prompt-builder/rulePacks.ts`, `src/modules/prompt-builder/attachments.ts` (new), `src/content/llmInjector.ts`, `src/lib/storage.ts`, `src/sidepanel/components/YourPhoto.tsx`, `tests/unit/promptBuilder.test.ts`, `CONTEXT_WINDOW.md`.
+- **Verification Status**:
+  - Vitest Unit Tests: **35/35 Passed**; `npm run zip` built cleanly.
+  - Output quality still depends on the image model; needs a re-test with the same pair of images.
+
+---
+
+### Iteration 24 — Fix Images Not Attaching + Broken Pin Image / "Pinterest" Title (2026-10-23)
+- **Goal / Trigger**: User report: sending from the side panel or the Pinterest menu put only the prompt into ChatGPT, no images; the panel showed a broken image captioned "Pinterest".
+- **Root causes & fixes**:
+  - **Content script missing in already-open tabs**: Chrome doesn't add manifest content scripts to tabs opened before the extension (re)loads, so injection fell back to text-only. [`serviceWorker.ts`](file:///Users/milan/Desktop/Ext/src/background/serviceWorker.ts) now injects the manifest's ChatGPT/Gemini script (`ensureInjectorScript`) when the tab doesn't answer, then retries; [`llmInjector.ts`](file:///Users/milan/Desktop/Ext/src/content/llmInjector.ts) registers its listener only once.
+  - **Guessed `originals/` URLs 404**: thumbnails were rewritten to `originals/…jpg` even when the original is a PNG. New `pinimgCandidates()` fallback chain (original → 736x → 474x) used by the downloader ([`fetchImageAsDataUrl`](file:///Users/milan/Desktop/Ext/src/lib/dataUrl.ts)) and a new [`FallbackImage`](file:///Users/milan/Desktop/Ext/src/sidepanel/components/FallbackImage.tsx) in the panel and gallery. `getBestImageSource` keeps the displayed `currentSrc` as the guaranteed fallback and only guesses `originals/` for sized thumbnails.
+  - **Wrong title/link**: `extractPinterestMetadata` walked up to `<body>` and took the last heading (the "Pinterest" logo) and a link to a different pin. Now reads only the pin's own card (nearest `/pin/` link, `pinTitle` within 6 ancestors), ignores generic titles.
+  - **All-or-nothing attach**: one failed download dropped every image (selfie included). Images now load individually; the result reports `attached` / `expected` and the panel shows "N of M images attached".
+  - **Unverified attach**: `attachFilesToComposer` now waits for preview thumbnails after using the file input (preferring `accept*="image"`), and only tries a synthetic paste if none appear. `urlToFile` no longer retries from the page (always CORS-blocked) and surfaces the real download error.
+  - `config/selectors.json`: `fileInputSelectors` prefer image inputs.
+- **Files Modified**: `src/background/serviceWorker.ts`, `src/content/llmInjector.ts`, `src/modules/llm-injector/clipboardPaste.ts`, `src/modules/image-selection/pinterestEnhancer.ts`, `src/lib/dataUrl.ts`, `src/sidepanel/App.tsx`, `src/sidepanel/components/{FallbackImage.tsx (new),ImageHero.tsx,Gallery.tsx}`, `config/selectors.json`, `tests/unit/{dataUrl,pinterestEnhancer}.test.ts`, `CONTEXT_WINDOW.md`.
+- **Verification Status**:
+  - Vitest Unit Tests: **42/42 Passed** (new: originals→736x fallback, error reporting, non-image rejection, srcset choice, pin-card metadata, no "Pinterest" title); `tsc` clean; `npm run zip` built cleanly.
+  - Whether ChatGPT/Gemini accept the files still needs a real-browser test.
+
+---
+
+### Iteration 25 — New Style "Add this effect to my photo" + Glasses Rule (2026-10-23)
+- **Goal / Trigger**: Image attachment confirmed working. User asked for the reverse of "Put me in this photo": keep their own photo and add the inspiration's effect (hand-drawn stars, doodles, text, colour, border). Their result also showed the selfie's sunglasses carried over.
+- **Changes Made**:
+  - New `IntentType` `apply_effect` ("Add this effect to my photo") as a main style (4 main styles now), in [`rulePacks.ts`](file:///Users/milan/Desktop/Ext/src/modules/prompt-builder/rulePacks.ts): edits Image 2 (the user's photo) and copies only graphics and photo treatment from Image 1. `composePrompt()` gained `selfieRole: 'face' | 'base'`; in `base` mode Image 2 is labelled as the photo to edit, the aspect ratio follows Image 2 (no crop/reframe), the lens line is dropped and the identity rule keeps the whole person (not face-only).
+  - Glasses rule for face mode: wear Image 1's glasses (or none), never Image 2's.
+  - Attachment renamed `2-my-photo.jpg`; stored photo now up to 1536 px (was 1024) since it can be the base image.
+  - "Your photo" card copy adapts when it is the photo being edited; Pinterest menu now positions itself after measuring its real height.
+  - Tests: new apply_effect and glasses tests; panel test expects 4 main styles.
+- **Files Modified**: `src/types/index.ts`, `src/modules/prompt-builder/{rulePacks,attachments}.ts`, `src/lib/imageResize.ts`, `src/sidepanel/App.tsx`, `src/sidepanel/components/YourPhoto.tsx`, `src/content/pinterestDetector.ts`, `tests/unit/{promptBuilder,sidepanel}.test.*`, `CONTEXT_WINDOW.md`.
+- **Verification Status**: Vitest **46/46 Passed**; `tsc` clean; `npm run zip` built cleanly.
+
+---
+
+### Iteration 26 — Multiple Face Photos for Better Likeness (2026-10-24)
+- **Goal / Trigger**: User asked for a place to upload several photos of their face in different poses so generations look more like them.
+- **Changes Made**:
+  - New storage key `extraFaces` (`userExtraFaces`), `MAX_EXTRA_FACES = 3`; saved together with the main photo via `setPhotos()` in `usePanelState`.
+  - "Your photo" card: Add accepts several files (first = main photo at 1536 px, rest = extra angles at 1024 px); a "More angles of your face" row with thumbnails, per-photo remove and a + tile. Removing the main photo promotes the first extra angle.
+  - Prompt builder: `buildPrompt({ extraFaces })` → `CompiledPrompt.extraFaceDataUrls` (optional, additive type change). Extra photos are attached as Image 3, 4, 5 (`3-my-face.jpg` …) and listed under "Attached images". Face-mode identity rule says to combine Images 2–N; text with no extras is unchanged. `apply_effect` still edits only Image 2 and uses extras just to keep the face accurate.
+  - Injector attaches the extras; "Download images" includes them; Pinterest one-tap menu caches and sends them too.
+  - Store listing / README privacy wording updated to plural photos.
+- **Files Modified**: `src/types/index.ts`, `src/lib/storage.ts`, `src/modules/prompt-builder/{attachments,rulePacks,builder}.ts`, `src/content/{llmInjector,pinterestDetector}.ts`, `src/sidepanel/{App.tsx,usePanelState.ts,components/YourPhoto.tsx}`, `tests/unit/promptBuilder.test.ts`, `CHROMEWEBSTORE.md`, `README.md`.
+- **Verification Status**: Vitest **50/50 Passed** (4 new multi-photo prompt tests); `tsc` clean; `npm run zip` built cleanly. Not yet tried in a real ChatGPT/Gemini tab.
 
 ## 🧪 Current Verification & Health Status
 
-* **Unit Tests**: `7/7 Vitest tests passing` ✅
-  * `tests/unit/pinterestEnhancer.test.ts` (3 tests)
-  * `tests/unit/promptBuilder.test.ts` (4 tests)
-* **Production Build**: `dist/` compiled with Vite v5.4.21 ✅
-* **Zip Deployment Package**: `promptforge-v1.0.0.zip` ready in project root ✅
+* **Unit Tests**: `50/50 Vitest tests passing` ✅
+  * `tests/unit/pinterestEnhancer.test.ts` (8 tests)
+  * `tests/unit/promptBuilder.test.ts` (17 tests)
+  * `tests/unit/imageHelpers.test.ts` (4 tests)
+  * `tests/unit/composerSelectors.test.ts` (5 tests)
+  * `tests/unit/sharedLib.test.ts` (5 tests)
+  * `tests/unit/dataUrl.test.ts` (5 tests)
+  * `tests/unit/sidepanel.test.tsx` (2 tests)
+* **Production Build**: `dist/` compiled with Vite ✅
+* **Zip Deployment Package**: `lookshot-v1.0.0.zip` (contents of `dist/`, manifest at top level) ready in project root ✅
 
 ---
 

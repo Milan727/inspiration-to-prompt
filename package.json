@@ -1,18 +1,19 @@
 {
-  "name": "promptforge",
+  "name": "lookshot",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Zero-cost AI photoshoot prompt builder & LLM composer injector Chrome extension",
+  "description": "Put yourself into any photo you love: turns Pinterest and web inspiration into ready-to-send prompts for ChatGPT and Gemini",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "zip": "npm run build && zip -r promptforge-v1.0.0.zip dist icons manifest.json -x '*.DS_Store'",
+    "zip": "npm run build && rm -f lookshot-v1.0.0.zip && cd dist && zip -r ../lookshot-v1.0.0.zip . -x \"*.DS_Store\"",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "lucide-react": "^0.469.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

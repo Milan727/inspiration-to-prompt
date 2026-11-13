@@ -7,8 +7,11 @@ export function buildPrompt(params: {
   target: TargetLLM;
   settings: PhotographySettings;
   referenceSelfie?: ReferencePhoto | null;
+  /** More photos of the user's face from other angles. Only used together with `referenceSelfie`. */
+  extraFaces?: ReferencePhoto[] | null;
 }): CompiledPrompt {
   const { selectedImage, intent, target, settings, referenceSelfie } = params;
+  const extraFaces = referenceSelfie ? params.extraFaces ?? [] : [];
 
   const rulePack = RULE_PACKS[intent] || RULE_PACKS.recreate_scene;
 
@@ -22,18 +25,30 @@ export function buildPrompt(params: {
     sourceUrl,
     settings,
     hasSelfie: !!referenceSelfie,
+    extraFaceCount: extraFaces.length,
     target,
   });
 
-  // Target-specific formatting
-  if (target === 'midjourney') {
-    const cleanDesc = imageTitle.replace(/["']/g, '');
-    const selfieNote = referenceSelfie ? ' featuring the subject identity and facial features from attached Image 2' : '';
-    const ratio = settings.aspectRatio.replace(':', ':');
-    promptText = `/imagine prompt: High-end photorealistic 8k photoshoot of ${cleanDesc}${selfieNote}, shot on ${settings.cameraLens}, ${settings.lightingStyle}, split-screen aesthetic composition, metallic and graphic star overlays, exact fabric textures and background materials --ar ${ratio} --v 6.0 --style raw --quality 2`;
-  } else if (target === 'flux') {
-    const cleanDesc = imageTitle.replace(/["']/g, '');
-    promptText = `Flux.1 Schnell / Dev Masterpiece: Photorealistic photoshoot recreation of "${cleanDesc}", 8k resolution, raw photography, shot on ${settings.cameraLens}, f/1.8 aperture, ${settings.lightingStyle}, shallow depth of field, sharp focus, natural skin pores, cinematic color grading, exact background environment and props. Aspect ratio ${settings.aspectRatio}.`;
+  // Midjourney and Flux are text-only targets that never see Image 1, so they get a compact
+  // description built from the page metadata plus the rule pack's style keywords.
+  if (target === 'midjourney' || target === 'flux') {
+    const cleanDesc = imageTitle.replace(/["']/g, '').trim();
+    const directive = settings.customDirective.trim();
+    const parts = [
+      `Photorealistic photo: ${cleanDesc}`,
+      rulePack.styleKeywords,
+      `${settings.cameraLens} lens`,
+      directive,
+    ].filter(Boolean);
+
+    if (target === 'midjourney') {
+      // A leading image URL is used by Midjourney as an image prompt. No --v flag, so the user's default model version applies.
+      const imageRef = selectedImage?.highResUrl || selectedImage?.url || '';
+      const imagePrefix = /^https?:\/\//.test(imageRef) ? `${imageRef} ` : '';
+      promptText = `${imagePrefix}${parts.join(', ')} --ar ${settings.aspectRatio} --style raw`;
+    } else {
+      promptText = `${parts.join(', ')}, sharp focus, natural skin texture, cinematic colour grading. Aspect ratio ${settings.aspectRatio}.`;
+    }
   }
 
   const negativePrompt = 'blur, low resolution, distorted faces, extra fingers, oversaturated, plastic skin, CGI render, watermarks, signature, bad anatomy';
@@ -52,6 +67,7 @@ export function buildPrompt(params: {
     negativePrompt,
     imageUrls,
     referenceSelfieDataUrl: referenceSelfie?.dataUrl,
+    extraFaceDataUrls: extraFaces.map((face) => face.dataUrl),
     timestamp: Date.now(),
   };
 }
