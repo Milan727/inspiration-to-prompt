@@ -1,288 +1,76 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import '@fontsource-variable/inter';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg-paper: #FFF8F2;
-  --surface-beige: #F6ECE1;
-  --surface-beige-hover: #EAE1D6;
-  --ink-black: #211D16;
-  --primary-coral: #FF6B6B;
-  --primary-coral-dark: #E05252;
-  --badge-yellow: #FFE66A;
-  --badge-yellow-dark: #E5CD50;
-  --text-primary: #211D16;
-  --text-secondary: #584140;
-  --text-muted: #8C706F;
-  --hard-shadow: 4px 4px 0px #211D16;
-  --hard-shadow-sm: 2px 2px 0px #211D16;
+  color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-}
-
+html,
 body {
   margin: 0;
-  padding: 0;
-  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: var(--bg-paper);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-size: 13px;
+  background: #0e0e0f;
+  color: #ededef;
+  font-family: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
   line-height: 1.5;
-  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Heading Typography */
-h1, h2, h3, .font-heading {
-  font-family: 'Bricolage Grotesque', sans-serif;
+#root {
+  min-height: 100vh;
 }
 
-/* Monospace Prompt Font */
-pre, code, .font-mono {
-  font-family: 'JetBrains Mono', monospace;
+@layer components {
+  /* Tactile press state used on every button. */
+  .press {
+    @apply transition-transform duration-100 active:scale-[0.96];
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-safelight;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-[0.06em] text-ink-300;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-ink-100 placeholder:text-ink-500 focus:border-safelight focus:outline-none;
+  }
+
+  .chip {
+    @apply press focus-ring min-h-9 rounded-full border border-ink-600 px-3.5 text-[13px] font-medium text-ink-300 hover:text-ink-100;
+  }
+
+  .chip-on {
+    @apply border-safelight bg-ink-850 text-ink-100;
+  }
 }
 
-/* Eliminate sticky browser focus outlines on button clicks */
-button, input, select {
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:focus-visible, input:focus-visible, select:focus-visible {
-  outline: 2px solid #211D16;
-  outline-offset: 2px;
-}
-
-/* Ultra-thin scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: #FFF8F2;
-  border-left: 1px solid #211D16;
+  width: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #211D16;
-  border-radius: 0px;
+  background: #26262a;
+  border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #FF6B6B;
-}
-
-/* Selection */
-::selection {
-  background: #FFE66A;
-  color: #211D16;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Neo-Brutalist Cards & Containers */
-.neo-card {
-  background-color: var(--surface-beige);
-  border: 2px solid #211D16;
-  box-shadow: 4px 4px 0px #211D16;
-  border-radius: 8px;
-}
-
-.neo-card-sm {
-  background-color: var(--surface-beige);
-  border: 2px solid #211D16;
-  box-shadow: 2px 2px 0px #211D16;
-  border-radius: 6px;
-}
-
-/* Tactile micro-interactions (Neo-Brutalist Hard Offset Press) */
-.interactive-btn {
-  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease;
-  will-change: transform, box-shadow;
-}
-
-.interactive-btn:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 1px 1px 0px #211D16 !important;
-}
-
-/* Smooth Neo-Brutalist chip selection styling */
-.chip-item {
-  background-color: #FFF8F2;
-  border: 2px solid #211D16;
-  color: #211D16;
-  font-weight: 600;
-  box-shadow: 2px 2px 0px #211D16;
-  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.chip-item:hover {
-  background-color: #FFE66A;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #211D16;
-}
-
-.chip-item-active {
-  background-color: #FF6B6B !important;
-  border-color: #211D16 !important;
-  color: #211D16 !important;
-  font-weight: 700 !important;
-  box-shadow: 2px 2px 0px #211D16 !important;
-}
-
-/* Neo Input & Select Controls */
-.neo-input {
-  background-color: #FFFFFF;
-  border: 2px solid #211D16;
-  color: #211D16;
-  box-shadow: 2px 2px 0px #211D16;
-  border-radius: 6px;
-  font-family: inherit;
-  transition: box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease;
-}
-
-.neo-input:focus {
-  box-shadow: 3px 3px 0px #211D16;
-  background-color: #FFFFFF;
-}
-
-/* ══════════════════════════════════════════════
-   Cyber-Editorial Dark Mode (Stitch MCP Theme)
-   ══════════════════════════════════════════════ */
-
-body.dark-mode {
-  --bg-paper: #121212;
-  --surface-beige: #1C1C1E;
-  --surface-beige-hover: #2C2C2E;
-  --ink-black: #F2F2F7;
-  --text-primary: #F2F2F7;
-  --text-secondary: #8E8E93;
-  --text-muted: #636366;
-  background-color: #121212 !important;
-  color: #F2F2F7 !important;
-}
-
-body.dark-mode ::-webkit-scrollbar-track {
-  background: #121212;
-  border-left: 1px solid #2C2C2E;
-}
-
-body.dark-mode ::-webkit-scrollbar-thumb {
-  background: #3A3A3C;
-}
-
-body.dark-mode ::-webkit-scrollbar-thumb:hover {
-  background: #FF5252;
-}
-
-/* Card Containers */
-body.dark-mode .neo-card {
-  background-color: #1C1C1E;
-  border: 1.5px solid #2C2C2E;
-  box-shadow: 4px 4px 0px #080808;
-}
-
-body.dark-mode .neo-card-sm {
-  background-color: #1C1C1E;
-  border: 1.5px solid #2C2C2E;
-  box-shadow: 2px 2px 0px #080808;
-}
-
-/* Labels & Typography */
-body.dark-mode .section-header-label {
-  color: #F2F2F7 !important;
-  opacity: 0.95 !important;
-  letter-spacing: 0.08em;
-}
-
-/* Input Fields */
-body.dark-mode .neo-input {
-  background-color: #161618;
-  border: 1.5px solid #2C2C2E;
-  color: #F2F2F7;
-  box-shadow: 2px 2px 0px #080808;
-}
-
-body.dark-mode .neo-input:focus {
-  background-color: #1C1C1E;
-  border-color: #FF5252;
-  box-shadow: 3px 3px 0px #080808;
-}
-
-/* Option Chips */
-body.dark-mode .chip-item {
-  background-color: #1C1C1E;
-  border: 1.5px solid #2C2C2E;
-  color: #F2F2F7;
-  box-shadow: 2px 2px 0px #080808;
-}
-
-body.dark-mode .chip-item:hover {
-  background-color: #2C2C2E;
-  color: #FFD60A;
-  border-color: #3A3A3C;
-  box-shadow: 3px 3px 0px #080808;
-}
-
-body.dark-mode .chip-item-active {
-  background-color: #FF5252 !important;
-  border-color: #FF5252 !important;
-  color: #121212 !important;
-  font-weight: 800 !important;
-  box-shadow: 2px 2px 0px #080808 !important;
-}
-
-/* Buttons */
-body.dark-mode .neo-btn-secondary {
-  background-color: #1C1C1E !important;
-  border: 1.5px solid #2C2C2E !important;
-  color: #F2F2F7 !important;
-  box-shadow: 3px 3px 0px #080808 !important;
-}
-
-body.dark-mode .neo-btn-secondary:hover {
-  background-color: #2C2C2E !important;
-  border-color: #3A3A3C !important;
-}
-
-body.dark-mode .interactive-btn:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 1px 1px 0px #080808 !important;
-}
-
-
-/* Subtle fade-in animation for panels */
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
-
 .animate-fade-in {
-  animation: fadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-in 160ms ease-out;
 }
-
-/* Toast entrance animation */
-@keyframes toastSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-toast {
-  animation: toastSlide 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-

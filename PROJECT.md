@@ -1,13 +1,13 @@
-# PromptForge — Manifest V3 Chrome Extension
+# Lookshot — Manifest V3 Chrome Extension
 
 ## Product Vision
-PromptForge allows users to discover inspiration images anywhere on the web (starting with Pinterest), analyze their photographic qualities (lighting, camera lens, composition, mood), select from 6 intent rule packs, and inject structured prompts directly into their own ChatGPT or Gemini web sessions — with zero API costs for developer and user alike.
+Lookshot allows users to discover inspiration images anywhere on the web (starting with Pinterest), analyze their photographic qualities (lighting, camera lens, composition, mood), select from 6 intent rule packs, and inject structured prompts directly into their own ChatGPT or Gemini web sessions — with zero API costs for developer and user alike.
 
 ## Zero-Cost Core Architecture
 - **No Paid APIs**: Never calls OpenAI, Gemini, or Stability paid endpoints.
 - **Client-Side Rule Engine**: Prompts are compiled locally using rule-based photography templates.
 - **DOM & Clipboard Injection**: Hand-delivers structured text prompts + inspiration images (+ optional selfie reference) straight into the user's existing `chatgpt.com` or `gemini.google.com` tab.
-- **Guaranteed Fallback**: If browser DOM or CORS restrictions block direct injection, PromptForge seamlessly falls back to 1-click prompt copying and reference image downloading.
+- **Guaranteed Fallback**: If browser DOM or CORS restrictions block direct injection, Lookshot seamlessly falls back to 1-click prompt copying and reference image downloading.
 
 ```
 Pinterest / Web Image

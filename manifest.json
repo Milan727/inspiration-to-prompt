@@ -1,31 +1,45 @@
 {
   "manifest_version": 3,
-  "name": "PromptForge - AI Photoshoot & Prompt Builder",
+  "name": "Lookshot - Put Yourself in Any Photo",
   "version": "1.0.0",
-  "description": "Transform Pinterest & web inspiration images into detailed AI prompts and inject them into ChatGPT/Gemini with zero API cost.",
+  "description": "See a look you love? Turn any Pinterest or web photo into a ready-to-send ChatGPT or Gemini prompt, with you in it.",
   "permissions": [
     "sidePanel",
     "storage",
-    "tabs",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "activeTab"
   ],
   "host_permissions": [
     "*://*.pinterest.com/*",
     "*://*.pinterest.ca/*",
     "*://*.pinterest.co.uk/*",
+    "*://*.pinterest.com.au/*",
+    "*://*.pinterest.co.in/*",
+    "*://*.pinterest.de/*",
+    "*://*.pinterest.fr/*",
+    "*://*.pinterest.es/*",
+    "*://*.pinterest.it/*",
+    "*://*.pinterest.com.mx/*",
+    "*://*.pinterest.jp/*",
+    "*://*.pinterest.ie/*",
+    "*://*.pinterest.nz/*",
+    "*://*.pinimg.com/*",
     "*://chatgpt.com/*",
     "*://*.chatgpt.com/*",
     "*://gemini.google.com/*",
-    "*://*.gemini.google.com/*",
-    "<all_urls>"
+    "*://*.gemini.google.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
   ],
   "background": {
     "service_worker": "src/background/serviceWorker.ts",
     "type": "module"
   },
   "action": {
-    "default_title": "Open PromptForge Side Panel"
+    "default_title": "Open Lookshot"
   },
   "side_panel": {
     "default_path": "src/sidepanel/index.html"
@@ -37,8 +51,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/content/pinterestDetector.ts"],
+      "matches": [
+        "*://*.pinterest.com/*",
+        "*://*.pinterest.ca/*",
+        "*://*.pinterest.co.uk/*",
+        "*://*.pinterest.com.au/*",
+        "*://*.pinterest.co.in/*",
+        "*://*.pinterest.de/*",
+        "*://*.pinterest.fr/*",
+        "*://*.pinterest.es/*",
+        "*://*.pinterest.it/*",
+        "*://*.pinterest.com.mx/*",
+        "*://*.pinterest.jp/*",
+        "*://*.pinterest.ie/*",
+        "*://*.pinterest.nz/*"
+      ],
+      "js": [
+        "src/content/pinterestDetector.ts"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -48,7 +78,9 @@
         "*://gemini.google.com/*",
         "*://*.gemini.google.com/*"
       ],
-      "js": ["src/content/llmInjector.ts"],
+      "js": [
+        "src/content/llmInjector.ts"
+      ],
       "run_at": "document_end"
     }
   ]

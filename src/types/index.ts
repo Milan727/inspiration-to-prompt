@@ -4,7 +4,8 @@ export type IntentType =
   | 'fashion_transfer'
   | 'pro_portrait'
   | 'travel_lifestyle'
-  | 'directed_edit';
+  | 'directed_edit'
+  | 'apply_effect';
 
 export type TargetLLM = 'chatgpt' | 'gemini' | 'midjourney' | 'flux';
 
@@ -45,6 +46,8 @@ export interface CompiledPrompt {
   negativePrompt?: string;
   imageUrls: string[];
   referenceSelfieDataUrl?: string;
+  /** More photos of the user's face from other angles, attached after the main photo as Image 3, 4, … */
+  extraFaceDataUrls?: string[];
   timestamp: number;
 }
 
@@ -66,7 +69,8 @@ export type ExtensionMessageType =
   | 'INJECTION_RESULT'
   | 'COPY_TO_CLIPBOARD'
   | 'OPEN_SIDE_PANEL'
-  | 'FETCH_IMAGE_BASE64';
+  | 'FETCH_IMAGE_BASE64'
+  | 'SEND_TO_AI';
 
 export interface ExtensionMessage {
   type: ExtensionMessageType;

@@ -15,7 +15,7 @@ Whenever working on this codebase, you **MUST** strictly adhere to the following
 
 ### 2. DURING DEVELOPMENT (Execution Rules)
 1. **Preserve Architectural Contracts**: Do not break existing types in `src/types/index.ts` or prompt compilation logic in `src/modules/prompt-builder/`.
-2. **UI Design Standards**: Adhere to the established **Exaggerated Minimalism** theme (monochrome dark `#111` background, `#161616` surface, `#222` border, Inter font, no gradients, tactile `scale(0.96)` press states).
+2. **UI Design Standards**: Adhere to the **Darkroom Minimal** theme: Tailwind tokens in `tailwind.config.js` (`ink-*` near-black grounds `#0E0E0F`/`#151517`, `#222226` borders, single `safelight` accent `#FFB547`), Inter (bundled via `@fontsource-variable/inter`, no remote fonts), no gradients, `.press` tactile `scale(0.96)` states, 44px touch targets. Photos are the hero.
 3. **No Symptom Masking**: Never suppress errors, wrap broken functions in silent try/catches without tracebacks, or delete failing tests.
 
 ### 3. END OF SESSION (Mandatory History & Context Update)
@@ -25,7 +25,7 @@ Before concluding your turn or declaring a task complete, you **MUST**:
    npm test
    npm run zip
    ```
-   Confirm that all unit tests pass (7/7 green) and `promptforge-v1.0.0.zip` compiles cleanly.
+   Confirm that all unit tests pass and `lookshot-v1.0.0.zip` compiles cleanly.
 2. **Update `CONTEXT_WINDOW.md`**:
    Append a new numbered **Iteration Entry** to the bottom of [CONTEXT_WINDOW.md](file:///Users/milan/Desktop/Ext/CONTEXT_WINDOW.md) using the required format:
    ```markdown

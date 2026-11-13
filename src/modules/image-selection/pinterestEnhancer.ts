@@ -13,144 +13,79 @@ export function enhancePinterestUrl(url: string): string {
 }
 
 /**
- * Sanitizes titles and text to strip public figures, celebrity names, and policy-triggering keywords
+ * Fallback chain for a Pinterest image URL. `originals/` URLs guessed from a thumbnail can 404 (the
+ * original may be a .png while thumbnails are .jpg), but the 736x / 474x sizes always exist as .jpg.
  */
-export function sanitizePublicFiguresAndSafetyKeywords(text: string): string {
-  if (!text) return '';
-
-  let cleaned = text
-    .replace(/^this may contain:\s*/i, '')
-    .replace(/^image may contain:\s*/i, '')
-    .replace(/^may be an image of\s*/i, '');
-
-  // List of public figure / celebrity terms to anonymize for AI policy safety
-  const publicFigureRegex = /\b(modi|narendra modi|nawazuddin|nawazuddin siddiqui|biden|trump|obama|putin|musk|elon musk|taylor swift|shah rukh khan|srk|salman khan|actor|politician|president|prime minister)\b/gi;
-  cleaned = cleaned.replace(publicFigureRegex, 'subject');
-
-  // Strip policy risk keywords
-  cleaned = cleaned
-    .replace(/\b(face swap|faceswap|swap face|substitute face|deepfake|impersonate)\b/gi, 'portrait subject styling')
-    .trim();
-
-  return cleaned;
+export function pinimgCandidates(url: string): string[] {
+  if (!url || !url.includes('pinimg.com')) return url ? [url] : [];
+  const sized = (size: string) => url.replace(/\/(originals|\d+x)\//, `/${size}/`);
+  return [...new Set([url, sized('736x'), sized('474x')])];
 }
 
 /**
  * Extracts the highest quality image URL from an img element or srcset attribute.
  */
 export function getBestImageSource(img: HTMLImageElement): { url: string; highResUrl: string } {
-  let url = img.src || '';
-  
+  // What the browser actually displayed: guaranteed to load, used as the last fallback.
+  const loaded = img.currentSrc || img.src || '';
+  let best = img.getAttribute('data-src') || img.getAttribute('data-actual-src') || loaded;
+
   if (img.srcset) {
     const candidates = img.srcset
       .split(',')
       .map((entry) => {
-        const parts = entry.trim().split(/\s+/);
-        const src = parts[0];
-        const descriptor = parts[1] || '1x';
-        let scale = 1;
-        if (descriptor.endsWith('x')) {
-          scale = parseFloat(descriptor.replace('x', '')) || 1;
-        } else if (descriptor.endsWith('w')) {
-          scale = parseFloat(descriptor.replace('w', '')) || 1;
-        }
-        return { src, scale };
+        const [src, descriptor = '1x'] = entry.trim().split(/\s+/);
+        return { src, scale: parseFloat(descriptor) || 1 };
       })
+      .filter((c) => c.src)
       .sort((a, b) => b.scale - a.scale);
-
-    if (candidates.length > 0 && candidates[0].src) {
-      url = candidates[0].src;
-    }
+    if (candidates.length > 0) best = candidates[0].src;
   }
 
-  const dataSrc = img.getAttribute('data-src') || img.getAttribute('data-actual-src');
-  if (dataSrc) {
-    url = dataSrc;
-  }
-
-  const highResUrl = enhancePinterestUrl(url);
-
-  return {
-    url,
-    highResUrl,
-  };
+  // A srcset entry that already points at originals/ is real; only guess originals/ for sized thumbnails.
+  const highResUrl = best.includes('/originals/') ? best : enhancePinterestUrl(best);
+  return { url: loaded || best, highResUrl };
 }
 
+/** Strips the auto-generated caption prefixes Pinterest adds to alt text ("This may contain: …"). */
 export function cleanPinterestText(text: string): string {
-  return sanitizePublicFiguresAndSafetyKeywords(text);
+  if (!text) return '';
+  return text
+    .replace(/^this may contain:\s*/i, '')
+    .replace(/^image may contain:\s*/i, '')
+    .replace(/^may be an image of\s*/i, '')
+    .trim();
 }
+
+const GENERIC_TITLES = /^(pinterest|home|explore|inspiration photo)$/i;
 
 /**
- * Extracts metadata from Pinterest DOM container with public figure sanitization.
- * Scrapes descriptions and search tags from page DOM to extract detailed features without an API key!
+ * Extracts title, caption and pin link for a pin image. Looks only at the image's own card (nearest
+ * ancestors), never the whole page: walking up to <body> used to pick up the site logo ("Pinterest")
+ * and the link of a different pin.
  */
 export function extractPinterestMetadata(img: HTMLImageElement): { title: string; alt: string; sourceUrl: string } {
-  const rawAlt = img.alt || '';
-  let alt = cleanPinterestText(rawAlt);
-  let title = alt;
-  let sourceUrl = window.location.href;
+  const alt = cleanPinterestText(img.alt || '');
+  const onPinPage = /^\/pin\/\d+/.test(window.location.pathname);
 
-  let pinDescription = '';
-  let pinTags: string[] = [];
+  const pinLink = img.closest('a[href*="/pin/"]') as HTMLAnchorElement | null;
+  const sourceUrl = pinLink?.href || (onPinPage ? window.location.href : '');
 
-  // 1. Scrape meta tags
-  const metaDesc = document.querySelector('meta[property="og:description"], meta[name="description"]');
-  if (metaDesc) {
-    const content = metaDesc.getAttribute('content');
-    if (content) {
-      pinDescription = cleanPinterestText(content);
-    }
+  let title = '';
+  let node: HTMLElement | null = img.parentElement;
+  for (let depth = 0; node && depth < 6 && !title; depth++, node = node.parentElement) {
+    const titleEl = node.querySelector('[data-test-id="pin-title"], [data-test-id="pinTitle"]');
+    title = cleanPinterestText(titleEl?.textContent?.trim() ?? '');
   }
-
-  // 2. Scrape on-page description container
-  const descEl = document.querySelector('[data-test-id="pin-description"], [data-test-id="truncated-description"]');
-  if (descEl && descEl.textContent) {
-    const scrapedDesc = cleanPinterestText(descEl.textContent.trim());
-    if (scrapedDesc.length > pinDescription.length) {
-      pinDescription = scrapedDesc;
-    }
+  if (!title && onPinPage) {
+    title = cleanPinterestText(document.querySelector('[data-test-id="pin-title"], main h1')?.textContent?.trim() ?? '');
   }
-
-  // 3. Scrape tag lists
-  const tagElements = document.querySelectorAll('[data-test-id="visual-search-tag"], [data-test-id="pin-tag"], a[href*="/search/q/"]');
-  tagElements.forEach((el) => {
-    if (el.textContent) {
-      const tag = cleanPinterestText(el.textContent.trim());
-      if (tag && !pinTags.includes(tag) && tag.length < 25) {
-        pinTags.push(tag);
-      }
-    }
-  });
-
-  // 4. Scrape title
-  let current: HTMLElement | null = img;
-  while (current && current !== document.body) {
-    const titleEl = current.querySelector('[data-test-id="pin-title"], [data-test-id="pinTitle"], h1, h2');
-    if (titleEl && titleEl.textContent) {
-      title = cleanPinterestText(titleEl.textContent.trim());
-    }
-
-    const linkEl = current.querySelector('a[href*="/pin/"]');
-    if (linkEl && linkEl instanceof HTMLAnchorElement) {
-      sourceUrl = linkEl.href;
-    }
-
-    current = current.parentElement;
-  }
-
-  // Combine title, description, and tags for rich prompt compilation
-  let combinedDetails = title || alt || 'Inspiration Photo';
-  if (pinDescription && pinDescription !== title) {
-    combinedDetails += ` - Details: ${pinDescription}`;
-  }
-  if (pinTags.length > 0) {
-    combinedDetails += ` (Tags: ${pinTags.join(', ')})`;
-  }
+  if (GENERIC_TITLES.test(title)) title = '';
 
   return {
     title: title || alt || 'Inspiration Photo',
-    alt: combinedDetails,
-    sourceUrl
+    alt: alt || title,
+    sourceUrl,
   };
 }
 

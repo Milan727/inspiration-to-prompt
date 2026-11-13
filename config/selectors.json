@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "chatgpt": {
+    "textareaSelectors": [
+      "#prompt-textarea",
+      "textarea[tabindex=\"0\"]",
+      "div[contenteditable=\"true\"]#prompt-textarea",
+      "div[contenteditable=\"true\"]"
+    ],
+    "fileInputSelectors": [
+      "input[type=\"file\"][accept*=\"image\"]",
+      "input[type=\"file\"]"
+    ]
+  },
+  "gemini": {
+    "textareaSelectors": [
+      "rich-textarea div[contenteditable=\"true\"]",
+      "div.aria-textarea[contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"].input-area",
+      "div[contenteditable=\"true\"]",
+      "textarea"
+    ],
+    "fileInputSelectors": [
+      "input[type=\"file\"][accept*=\"image\"]",
+      "input[type=\"file\"]"
+    ]
+  }
+}
