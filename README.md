@@ -6,11 +6,15 @@ Lookshot is a Chrome extension (Manifest V3) for casual creators. Find a photo y
 
 No account, no API keys, no Lookshot servers. Prompts are built locally in your browser.
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="The Lookshot side panel: a captured Pinterest photo above the style list, with Add this effect to my photo selected and a Send to ChatGPT button" width="600">
+</p>
+
 ## Features
 
 - **One-tap on Pinterest**: hover a pin, tap the ring, choose a style. Lookshot opens ChatGPT or Gemini and fills it in.
 - **Right-click any image** on the web → *Send image to Lookshot*.
-- **Three main styles**: *Put me in this photo*, *Recreate this look*, *Try this outfit*. Plus *Pro headshot*, *Travel shot* and *Your own edit* under "More styles".
+- **Four main styles**: *Put me in this photo*, *Add this effect to my photo*, *Recreate this look*, *Try this outfit*. Plus *Pro headshot*, *Travel shot* and *Your own edit* under "More styles".
 - **Your photos, your consent**: add a photo of yourself, plus up to 3 more angles of your face for a closer likeness (stored only on your device, downscaled) after confirming it's you.
 - **Matches the photo's shape** automatically (4:5, 9:16, 1:1, 3:2, 16:9), with lens, text and extra-direction controls under *Advanced*.
 - **Gallery** of everything you've sent or copied.
